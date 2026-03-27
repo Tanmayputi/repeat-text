@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RepeatIt</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --border: #2a2a2a;
+      --accent: #e8ff3c;
+      --accent2: #ff4c2b;
+      --text: #f0f0f0;
+      --muted: #666;
+      --radius: 6px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+    }
+
+    /* Background grain */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    header {
+      margin-bottom: 2.5rem;
+      animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3rem, 10vw, 5.5rem);
+      line-height: 1;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      display: inline-block;
+    }
+
+    .tagline {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 0.3rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
+      animation: fadeUp 0.7s 0.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .field-group {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .field.grow { flex: 1; }
+
+    label {
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    label span {
+      color: var(--accent);
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.95rem;
+      padding: 0.7rem 1rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,255,60,0.08);
+    }
+
+    input[type="number"] {
+      width: 110px;
+      text-align: center;
+    }
+
+    /* Remove spinner */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    .btn-repeat {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.25rem;
+      letter-spacing: 0.12em;
+      padding: 0.75rem 2rem;
+      cursor: pointer;
+      transition: transform 0.12s, background 0.15s, box-shadow 0.15s;
+      align-self: flex-end;
+      white-space: nowrap;
+    }
+
+    .btn-repeat:hover {
+      background: #f5ff6e;
+      box-shadow: 0 4px 20px rgba(232,255,60,0.3);
+    }
+
+    .btn-repeat:active {
+      transform: scale(0.96);
+    }
+
+    .actions-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .sep {
+      height: 1px;
+      background: var(--border);
+    }
+
+    .output-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .output-meta {
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .output-meta.active { color: var(--accent); }
+
+    .output-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      min-height: 120px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 0.85rem 1rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: var(--text);
+      word-break: break-word;
+      white-space: pre-wrap;
+      transition: border-color 0.2s;
+      position: relative;
+    }
+
+    .output-box:empty::before {
+      content: 'Output will appear here...';
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .output-box.filled {
+      border-color: #2e2e2e;
+    }
+
+    /* Scrollbar */
+    .output-box::-webkit-scrollbar { width: 4px; }
+    .output-box::-webkit-scrollbar-track { background: transparent; }
+    .output-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .bottom-row {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: flex-end;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.45rem 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .btn-icon:hover {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+
+    .btn-icon.copy:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Flash animation on repeat */
+    @keyframes flash {
+      0%   { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,255,60,0.15); }
+      100% { border-color: #2e2e2e; box-shadow: none; }
+    }
+
+    .output-box.flash {
+      animation: flash 0.5s ease-out forwards;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Separator label */
+    .sep-label {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      color: var(--muted);
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .sep-label::before, .sep-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    @media (max-width: 480px) {
+      .field-group { flex-direction: column; }
+      input[type="number"] { width: 100%; }
+      .actions-row { flex-direction: column; align-items: stretch; }
+      .btn-repeat { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">RepeatIt</div>
+    <div class="tagline">Type it once. Echo it forever.</div>
+  </header>
+
+  <div class="card">
+
+    <!-- Inputs row -->
+    <div class="field-group">
+      <div class="field grow">
+        <label>Input <span>text</span></label>
+        <input type="text" id="textInput" placeholder="Type anything here..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Repeat <span>×</span></label>
+        <input type="number" id="numInput" placeholder="10" min="1" max="9999" value="5" />
+      </div>
+    </div>
+
+    <!-- Action -->
+    <div class="actions-row">
+      <div class="field grow" style="justify-content:flex-end; flex-direction:row; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+        <label style="margin:0; letter-spacing:0.1em;">Separator:</label>
+        <select id="sepSelect" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Mono',monospace;font-size:0.82rem;padding:0.45rem 0.7rem;outline:none;cursor:pointer;">
+          <option value=" ">Space</option>
+          <option value=", ">Comma</option>
+          <option value="\n">New Line</option>
+          <option value=" | ">Pipe</option>
+          <option value="">None</option>
+        </select>
+      </div>
+      <button class="btn-repeat" onclick="doRepeat()">▶ REPEAT</button>
+    </div>
+
+    <div class="sep-label">output</div>
+
+    <!-- Output -->
+    <div class="field">
+      <div class="output-label-row">
+        <label>Result</label>
+        <span class="output-meta" id="outputMeta">—</span>
+      </div>
+      <div class="output-box" id="outputBox"></div>
+    </div>
+
+    <!-- Bottom actions -->
+    <div class="bottom-row">
+      <button class="btn-icon" onclick="doClear()">✕ Clear</button>
+      <button class="btn-icon copy" onclick="doCopy()">⎘ Copy</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const textInput = document.getElementById('textInput');
+  const numInput  = document.getElementById('numInput');
+  const outputBox = document.getElementById('outputBox');
+  const outputMeta = document.getElementById('outputMeta');
+  const sepSelect = document.getElementById('sepSelect');
+
+  // Allow pressing Enter to trigger repeat
+  textInput.addEventListener('keydown', e => { if (e.key === 'Enter') doRepeat(); });
+  numInput.addEventListener('keydown',  e => { if (e.key === 'Enter') doRepeat(); });
+
+  function doRepeat() {
+    const text = textInput.value;
+    const num  = parseInt(numInput.value, 10);
+    const sep  = sepSelect.value === '\\n' ? '\n' : sepSelect.value;
+
+    if (!text) {
+      shake(textInput);
+      return;
+    }
+    if (!num || num < 1) {
+      shake(numInput);
+      return;
+    }
+
+    const repeated = Array(num).fill(text).join(sep);
+    outputBox.textContent = repeated;
+    outputBox.classList.add('filled');
+
+    // Flash
+    outputBox.classList.remove('flash');
+    void outputBox.offsetWidth;
+    outputBox.classList.add('flash');
+
+    // Meta info
+    const charCount = repeated.length;
+    outputMeta.textContent = `${num}× · ${charCount} chars`;
+    outputMeta.classList.add('active');
+  }
+
+  function doClear() {
+    textInput.value = '';
+    numInput.value = '5';
+    outputBox.textContent = '';
+    outputBox.classList.remove('filled', 'flash');
+    outputMeta.textContent = '—';
+    outputMeta.classList.remove('active');
+    textInput.focus();
+  }
+
+  function doCopy() {
+    const content = outputBox.textContent;
+    if (!content) return;
+
+    // Method 1: Modern Clipboard API (HTTPS / secure contexts)
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(content).then(() => {
+        showCopied();
+      }).catch(() => fallbackCopy(content));
+    } else {
+      // Method 2: execCommand fallback (works on file://, HTTP, embeds)
+      fallbackCopy(content);
+    }
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '-9999px';
+    ta.setAttribute('readonly', '');
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length); // mobile support
+    try {
+      document.execCommand('copy');
+      showCopied();
+    } catch {
+      outputMeta.textContent = 'Select & copy manually';
+    }
+    document.body.removeChild(ta);
+  }
+
+  function showCopied() {
+    const orig = outputMeta.textContent;
+    outputMeta.textContent = '✓ Copied!';
+    outputMeta.classList.add('active');
+    setTimeout(() => { outputMeta.textContent = orig; }, 1500);
+  }
+
+  function shake(el) {
+    el.style.animation = 'none';
+    el.style.borderColor = 'var(--accent2)';
+    el.style.boxShadow = '0 0 0 3px rgba(255,76,43,0.15)';
+    setTimeout(() => {
+      el.style.borderColor = '';
+      el.style.boxShadow = '';
+    }, 600);
+    el.focus();
+  }
+</script>
+</body>
+</html>
